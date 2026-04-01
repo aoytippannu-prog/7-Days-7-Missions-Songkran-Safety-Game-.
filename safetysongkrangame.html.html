@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Songkran Safe Challenge 🌊🚗</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00a8ff;
+            --secondary: #4cd137;
+            --danger: #e84118;
+            --dark: #2f3640;
+            --glass: rgba(255, 255, 255, 0.95);
+            --past-day: #a5b1c2;
+            --locked-day: #f1f2f6;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Kanit', sans-serif; }
+        body { margin: 0; background-color: #f0f2f5; display: flex; justify-content: center; min-height: 100vh; }
+        
+        #game-app { width: 100%; max-width: 500px; background: #fff; position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+
+        .bg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: 0.5s; }
+        .day-1 { background: linear-gradient(#87CEEB, #E0F7FA); }
+        .day-2 { background: linear-gradient(#FF8C00, #FFD700); }
+        .day-3 { background: linear-gradient(#00BFFF, #E1F5FE); }
+        .day-4 { background: linear-gradient(#FF4500, #FFA500); }
+        .day-5 { background: linear-gradient(#483D8B, #BC8F8F); }
+        .day-6 { background: linear-gradient(#708090, #DCDCDC); }
+        .day-7 { background: linear-gradient(#32CD32, #F0FFF0); }
+
+        .screen { position: relative; z-index: 10; display: none; flex-direction: column; padding: 20px; height: 100vh; animation: fadeIn 0.3s; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .day-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .day-btn { padding: 12px 5px; border-radius: 12px; border: 2px solid transparent; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85rem; text-align: center; }
+        
+        .day-btn.past { background: var(--past-day); color: white; } 
+        .day-btn.today { background: #fff; color: var(--primary); border-color: var(--primary); box-shadow: 0 0 8px rgba(0,168,255,0.2); }
+        .day-btn.locked { background: var(--locked-day); color: #bdc3c7; cursor: not-allowed; }
+        .day-btn.selected { background: var(--primary) !important; color: white !important; transform: scale(1.05); }
+
+        .chibi-container { height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .chibi { width: 110px; height: 110px; background-size: contain; background-repeat: no-repeat; animation: idle 2s infinite ease-in-out; }
+        .bubble { background: var(--glass); border-radius: 15px; padding: 10px 15px; margin-bottom: 10px; border: 2px solid var(--primary); font-size: 0.85rem; max-width: 85%; line-height: 1.4; position: relative; }
+        .bubble::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 10px solid var(--primary); }
+        
+        @keyframes idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        .option-card { background: var(--glass); padding: 14px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: 2px solid #eee; transition: 0.2s; font-size: 0.95rem; }
+        .selected-true { background: var(--secondary) !important; color: white; border-color: transparent; }
+        .selected-false { background: var(--danger) !important; color: white; border-color: transparent; }
+
+        .btn-main { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; width: 100%; margin-top: auto; cursor: pointer; box-shadow: 0 4px 15px rgba(0,168,255,0.3); }
+        .btn-main:disabled { background: #ccc; box-shadow: none; }
+        .score-box { background: var(--dark); color: white; padding: 5px 15px; border-radius: 20px; position: absolute; top: 20px; right: 20px; z-index: 20; font-weight: bold; }
+
+        @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-25px); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+<div id="game-app">
+    <div id="bg-layer" class="bg-layer day-1"></div>
+
+    <div id="screen-home" class="screen active">
+        <div class="chibi-container">
+            <div class="bubble" id="home-bubble">สวัสดีครับ! พร้อมลุยภารกิจ "สงกรานต์ปลอดภัย" หรือยัง? เลือกวันที่เปิดอยู่เพื่อเริ่มสะสมแต้มกันเลยน้า~</div>
+            <div class="chibi" style="background-image: url('https://api.dicebear.com/7.x/adventurer/svg?seed=Lucky&backgroundColor=b6e3f4')"></div>
+        </div>
+        <h2 style="text-align: center; color: var(--dark); margin: 10px 0;">Songkran Safe Challenge</h2>
+        
+        <input type="text" id="p-name" placeholder="ชื่อ-นามสกุล ของพี่ๆ" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ccc;">
+        <input type="text" id="p-id" placeholder="รหัสพนักงาน" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ccc;">
+        
+        <p style="margin: 0; font-weight: bold; color: #555;">📅 ภารกิจทั้ง 7 วัน:</p>
+        <div class="day-selector" id="day-grid"></div>
+        
+        <button class="btn-main" id="start-btn" onclick="startMission()" disabled>เลือกรอบวันที่ต้องการเล่นก่อนนะ</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="score-box">คะแนน: <span id="ui-score">0</span></div>
+        <h3 id="ui-day-title" style="margin-top: 40px; color: var(--dark);">Day 1</h3>
+        <div class="chibi-container" style="height: 160px;">
+            <div id="ui-bubble" class="bubble">ติ๊กข้อที่พี่ๆ คิดว่า "ถูกต้อง" เพื่อรับคะแนนความปลอดภัยกันครับ!</div>
+            <div id="ui-chibi" class="chibi"></div>
+        </div>
+        <div id="options-list" style="margin-top: 10px; flex-grow: 1; overflow-y: auto;"></div>
+        <button class="btn-main" onclick="finishGame()">ส่งคำตอบเรียบร้อย!</button>
+    </div>
+
+    <div id="screen-result" class="screen">
+        <h2 style="text-align: center; margin-top: 50px;">เย้! จบภารกิจแล้ว</h2>
+        <div class="chibi-container">
+            <div id="res-chibi" class="chibi" style="width: 140px; height: 140px;"></div>
+        </div>
+        <div style="text-align:center; font-size: 1.6rem; font-weight: bold;">
+            คะแนนที่ได้วันนี้: <span id="res-base-score">0</span>
+            <div id="res-bonus-tag" style="color: var(--secondary); font-size: 1.2rem; display: none;">✨ ว้าว! รับโบนัสเล่นตรงวัน +10 ✨</div>
+        </div>
+        <p id="res-msg" style="text-align: center; padding: 20px; font-size: 1rem; color: #444; line-height: 1.5;"></p>
+        <button class="btn-main" onclick="location.reload()">กลับไปหน้าแรก</button>
+    </div>
+</div>
+
+<script>
+    // 🔗 วาง URL จากการ Deploy (ทุกคน/Anyone) ตรงนี้
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx9IxR4F1GkYOpsKTCnpmos8TJrzqm3f6_vUF9RFm1OpOsUcbW0dliN5kNk7iXgMf29/exec";
+    
+    // 📅 กำหนดวันเริ่มกิจกรรม
+    const START_DATE = new Date("2026-04-02T00:00:00");
+
+    let state = {
+        name: "", empId: "", score: 0, currentDay: null,
+        isBonusDay: false, todayIdx: 0
+    };
+
+    const missionData = {
+        1: { title: "เตรียมตัวก่อนเดินทาง", char: "Happy", q: [{t: "พักผ่อนให้เต็มที่ 7–8 ชั่วโมง", c: true}, {t: "เช็คลมยางให้พร้อม (30–35 PSI)", c: true}, {t: "โหมงานหนัก นอนแค่ 3 ชั่วโมงพอ", c: false}, {t: "เช็ครถล่วงหน้าก่อนเดินทาง 1 วัน", c: true}]},
+        2: { title: "ขับขี่ปลอดภัยไร้กังวล", char: "Drive", q: [{t: "รักษาความเร็วไม่เกิน 90-100 กม./ชม.", c: true}, {t: "เว้นระยะห่างคันหน้า 40-50 เมตร", c: true}, {t: "แชทมือถือไปด้วยขับไปด้วย", c: false}]},
+        3: { title: "เล่นน้ำสงกรานต์ให้ปลอดภัย", char: "Water", q: [{t: "ยืนห่างจากขอบถนน 1–2 เมตร", c: true}, {t: "สาดน้ำใส่รถที่กำลังวิ่งเร็วๆ", c: false}, {t: "สวมรองเท้าที่มีดอกยางกันลื่น", c: true}]},
+        4: { title: "ระวังภัยแดดร้อน (Heatstroke)", char: "Sun", q: [{t: "จิบน้ำบ่อยๆ ทุก 1 ชั่วโมง", c: true}, {t: "ยืนตากแดดจัดนานเกิน 1 ชม.", c: false}, {t: "สวมหมวกหรือกางร่มกันแดด", c: true}]},
+        5: { title: "ฉลองได้แต่ต้องไม่ดื่มแอลกอฮอล์", char: "NoDrink", q: [{t: "ยึดหลัก 0% ดื่มไม่ขับเด็ดขาด", c: true}, {t: "งดดื่มล่วงหน้าก่อนขับ 24 ชม.", c: true}, {t: "ดื่มนิดเดียวเอง ไม่เมาหรอก", c: false}]},
+        6: { title: "ทักษะขับขี่เชิงป้องกัน", char: "Caution", q: [{t: "มองทางล่วงหน้าไกลๆ 10-15 วินาที", c: true}, {t: "เปิดไฟเลี้ยวก่อนเปลี่ยนเลน 3 วินาที", c: true}, {t: "ขับจี้ท้ายรถคันหน้าเพื่อประหยัดที่", c: false}]},
+        7: { title: "ถึงจุดหมายโดยสวัสดิภาพ", char: "Home", q: [{t: "เดินตรวจรอบรถก่อนออกตัว 5 นาที", c: true}, {t: "แวะพักยืดเส้นยืดสายทุกๆ 2 ชั่วโมง", c: true}, {t: "ขับรวดเดียวถึงบ้าน ไม่ต้องพักเลย", c: false}]}
+    };
+
+    function init() {
+        const now = new Date();
+        const diffTime = now.getTime() - START_DATE.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        state.todayIdx = diffDays;
+
+        const grid = document.getElementById('day-grid');
+        grid.innerHTML = "";
+
+        for(let i=1; i<=7; i++) {
+            const btn = document.createElement('button');
+            btn.innerText = "วันที่ " + i;
+            
+            if (i < state.todayIdx) {
+                setBtnStatus(btn, i, "past");
+            } else if (i === state.todayIdx) {
+                setBtnStatus(btn, i, "today");
+            } else {
+                setBtnStatus(btn, i, "locked");
+            }
+            grid.appendChild(btn);
+        }
+    }
+
+    function setBtnStatus(btn, day, status) {
+        btn.className = `day-btn ${status}`;
+        btn.onclick = () => {
+            if (status === "locked") {
+                const targetDate = new Date(START_DATE.getTime() + (day-1)*86400000);
+                alert(`🔒 อดใจรออีกนิดน้า ภารกิจนี้จะเปิดในวันที่ ${targetDate.toLocaleDateString('th-TH')}`);
+                return;
+            }
+            state.currentDay = day;
+            state.isBonusDay = (status === "today");
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').innerText = state.isBonusDay ? `ลุยภารกิจ Day ${day} (รับโบนัสกัน!)` : `ย้อนกลับไปเล่น Day ${day}`;
+        };
+    }
+
+    function startMission() {
+        state.name = document.getElementById('p-name').value;
+        state.empId = document.getElementById('p-id').value;
+        if(!state.name || !state.empId) return alert("รบกวนพี่ๆ ใส่ชื่อและรหัสพนักงานให้หนูหน่อยน้า");
+
+        document.getElementById('screen-home').classList.remove('active');
+        document.getElementById('screen-game').classList.add('active');
+        
+        const data = missionData[state.currentDay];
+        document.getElementById('ui-day-title').innerText = `ภารกิจวันที่ ${state.currentDay}: ${data.title}`;
+        document.getElementById('bg-layer').className = `bg-layer day-${state.currentDay}`;
+        document.getElementById('ui-chibi').style.backgroundImage = `url('https://api.dicebear.com/7.x/adventurer/svg?seed=${data.char}')`;
+        
+        const list = document.getElementById('options-list');
+        list.innerHTML = "";
+        data.q.forEach(item => {
+            let div = document.createElement('div');
+            div.className = "option-card";
+            div.innerText = item.t;
+            div.onclick = () => {
+                if(div.classList.contains('selected-true') || div.classList.contains('selected-false')) return;
+                if(item.c) { 
+                    div.classList.add('selected-true'); 
+                    state.score += 20; 
+                    talk("เก่งมากครับ ถูกต้องเลย! +20", true); 
+                } else { 
+                    div.classList.add('selected-false'); 
+                    state.score -= 10; 
+                    talk("อุ๊ย! ข้อนี้ยังไม่ถูกน้า -10 ครับ", false); 
+                }
+                document.getElementById('ui-score').innerText = state.score;
+            };
+            list.appendChild(div);
+        });
+    }
+
+    function talk(txt, ok) {
+        document.getElementById('ui-bubble').innerText = txt;
+        const char = document.getElementById('ui-chibi');
+        char.style.animation = 'none'; char.offsetHeight;
+        char.style.animation = ok ? "jump 0.4s ease" : "shake 0.4s ease";
+    }
+
+    async function finishGame() {
+        const finalScore = state.isBonusDay ? state.score + 10 : state.score;
+        
+        document.getElementById('screen-game').classList.remove('active');
+        document.getElementById('screen-result').classList.add('active');
+        document.getElementById('res-base-score').innerText = state.score;
+        document.getElementById('res-bonus-tag').style.display = state.isBonusDay ? "block" : "none";
+        document.getElementById('res-chibi').style.backgroundImage = document.getElementById('ui-chibi').style.backgroundImage;
+        
+        document.getElementById('res-msg').innerText = state.isBonusDay 
+            ? "สุดยอดไปเลย! พี่ได้รับโบนัสเล่นตรงวันด้วยนะเนี่ย อย่าลืมกลับมาลุยต่อพรุ่งนี้นะครับ!"
+            : "ขอบคุณที่แวะมาทบทวนความปลอดภัยย้อนหลังนะครับ ถึงไม่ได้โบนัสแต่ความชัวร์เต็มร้อยแน่นอน!";
+
+        const formData = new URLSearchParams();
+        formData.append('name', state.name);
+        formData.append('empId', state.empId);
+        formData.append('score', finalScore);
+        formData.append('day', state.currentDay);
+        formData.append('bonus', state.isBonusDay ? "Yes" : "No");
+        formData.append('timestamp', new Date().toLocaleString('th-TH'));
+
+        try {
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                body: formData
+            });
+        } catch(e) {
+            console.log("Error sending data");
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
